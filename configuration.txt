@@ -1,7 +1,7 @@
  show run
 !
 ! Big Tap Controller 5.0.0 (2015.07.11.0615-m.bsc.bigdb)
-! Current Time: 2015-07-23.01:19:57
+! Current Time: 2015-07-23.01:21:30
 !
 version 1.0
 
@@ -54,11 +54,16 @@ user admin2
   full-name 'admin2 bsn'
   hashed-password method=PBKDF2WithHmacSHA1,salt=Tcy8Qi9BNZa3MobKJSmLtQ,rounds=10000,NpvWuLBKjZsLhEbSOu4MaDLkoQzdmw9X86ZQxmvRcNo
 
+user mostafa
+  full-name 'mostafa mansour'
+  hashed-password method=PBKDF2WithHmacSHA1,salt=IjNfoef9Y2gYMKhIsMpfQw,rounds=10000,Adm0d-SvVCALux9p2KLyypDwKKSCO7lEAxY0tUjVqyg
+
 ! group
 group admin
   associate rbac-permission admin-view
   associate user admin
   associate user admin2
+  associate user mostafa
 
 group read-only
   associate user ROuser
