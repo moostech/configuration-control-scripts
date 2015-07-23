@@ -1,0 +1,205 @@
+ show run
+!
+! Big Tap Controller 5.0.0 (2015.07.11.0615-m.bsc.bigdb)
+! Current Time: 2015-07-23.00:35:19
+!
+version 1.0
+
+! ntp
+ntp server 0.bigswitch.pool.ntp.org
+
+! snmp-server
+snmp-server enable traps
+
+! aaa
+aaa accounting exec default start-stop local
+
+aaa authentication login default group tacacs+ local
+
+aaa authorization exec default group tacacs+ local
+
+! bigtap
+bigtap crc
+
+bigtap inport-mask
+
+bigtap match-mode l3-l4-offset-match
+
+bigtap overlap
+
+bigtap pcap-retention-days 7
+
+bigtap tunneling
+
+no bigtap auto-delivery-interface-strip-vlan
+
+no bigtap auto-filter-interface-vlan-push
+
+no bigtap auto-filter-interface-vlan-rewrite
+
+! user
+user ROuser
+  full-name 'read only user1'
+  hashed-password method=PBKDF2WithHmacSHA1,salt=e9eRCbe3RJyCvnIg5v6_AA,rounds=10000,w382C133T4dWLcRjLaI4lCnevxFFV4_SfDKM__VDZIs
+
+user S1user
+  full-name 'security user1'
+  hashed-password method=PBKDF2WithHmacSHA1,salt=JqINNPm1KNy8xVt3d5WJng,rounds=10000,3OpWPt_c9rGXltlIwesqyHkzkYaEZCQRaNV4rKsUP5g
+
+user admin
+  full-name 'Default admin'
+  hashed-password method=PBKDF2WithHmacSHA1,salt=f60ucfdnuR6J_EY1dVNzIA,rounds=10000,DV3uFZDM2-qEZiP97Cct7WeBfl6FmrWtmU6Fr6XQtvg
+
+user admin2
+  full-name 'admin2 bsn'
+  hashed-password method=PBKDF2WithHmacSHA1,salt=Tcy8Qi9BNZa3MobKJSmLtQ,rounds=10000,NpvWuLBKjZsLhEbSOu4MaDLkoQzdmw9X86ZQxmvRcNo
+
+! group
+group admin
+  associate rbac-permission admin-view
+  associate user admin
+  associate user admin2
+
+group read-only
+  associate user ROuser
+
+! controller-node
+controller-node 20c1e6bb-13d9-4598-a9d8-3876d96d9cc9
+  controller-alias bigtap-controller-a
+  ip default-gateway 10.2.19.1
+  ip name-server 10.1.5.200
+  interface Ethernet 0
+    firewall allow ssl
+    firewall allow tcp 8000
+    firewall allow tcp 8080
+    firewall allow tcp 8082
+    firewall allow tcp 8443
+    firewall allow web
+    ip address 10.2.19.102 255.255.255.0
+
+! switch
+switch 00:00:70:72:cf:b6:17:18
+  switch-alias Filter-Switch-2
+  interface ethernet1
+    bigtap role filter interface-name facing_H1_eth1
+  interface ethernet2
+    bigtap role filter interface-name ixia_H2_eth2
+  interface ethernet8
+    bigtap role filter interface-name span_port_eth8
+
+switch 00:00:70:72:cf:b6:1c:40
+  switch-alias Filter-Switch-1
+  interface ethernet1
+  interface ethernet2
+  interface ethernet5
+    bigtap role delivery interface-name Extrahop_tool_H4
+  interface ethernet6
+    bigtap role filter interface-name span_port_eth6
+  interface ethernet8
+
+switch 00:00:70:72:cf:bd:47:72
+  switch-alias Core-Switch-1
+
+switch 00:00:70:72:cf:bd:dc:28
+  switch-alias Delivery-Switch-2
+  interface ethernet28
+  interface ethernet3
+    bigtap role filter interface-name facing_H2_eth3
+  interface ethernet42
+    description arista2.tme.bigswitch.com
+
+switch 00:00:70:72:cf:bd:dc:bc
+  switch-alias Delivery-Switch-1
+  interface ethernet1
+  interface ethernet10
+  interface ethernet11
+  interface ethernet2
+  interface ethernet20
+    bigtap role delivery interface-name FireEye_1
+  interface ethernet21
+    bigtap role delivery interface-name FireEye_2
+  interface ethernet3
+  interface ethernet48
+    description 'connected to controller for embedded capture'
+
+switch 00:00:70:72:cf:bd:e1:5c
+  deployment role bigchain
+  switch-alias bigchain-switch1
+
+switch 00:00:70:72:cf:c7:c5:af
+  deployment role bigchain
+  switch-alias ScienceDMZ-BC
+
+switch 00:00:70:72:cf:d6:6b:ec
+  deployment role bigchain
+  switch-alias bigchain-switch2
+
+switch 00:00:90:b1:1c:f4:cb:a9
+  switch-alias Core-Switch-2-dells6000
+  interface ethernet6/1
+    bigtap role delivery interface-name facing_H1_eth2
+  interface ethernet6/2
+    bigtap role filter interface-name span_bc2_eth6-2
+  interface ethernet6/3
+    bigtap role filter interface-name span_bc1_eth6-3
+  interface ethernet6/4
+    bigtap role delivery interface-name facing_H1_eth3
+
+! rbac-permission
+rbac-permission admin-view bigtap
+
+! bigchain
+bigchain user-defined-offset
+
+! bigtap
+bigtap analytics
+  track arp
+  track dhcp
+  track dns
+
+bigtap sflow
+  collector 10.2.19.145
+
+bigtap user-defined-offset
+  udf0 l3-start offset 0
+  udf1 l4-start offset 8
+  udf2 l4-start offset 12
+  udf3 l4-start offset 32
+
+! bigchain
+bigchain service FW_blacklist_service
+  description 'should only inspect 10.10.10.10'
+  type custom
+  1 match ip dst-ip 10.10.10.10 255.255.255.255
+  instance 1
+    interface-pair switch 00:00:70:72:cf:c7:c5:af in ethernet24 out ethernet25
+
+bigchain service IPS_demo
+  type all
+  instance 1
+    interface-pair switch 00:00:70:72:cf:c7:c5:af in ethernet22 out ethernet23
+
+bigchain service firewall_demo
+  action bypass-service
+  description 'connected to firewall'
+  type custom
+  1 match ip src-ip 1.1.1.1 255.255.255.255
+  instance 1
+    interface-pair switch 00:00:70:72:cf:c7:c5:af in ethernet20 out ethernet21
+
+bigchain chain chain_demo
+  endpoint-pair switch 00:00:70:72:cf:c7:c5:af endpoint1 ethernet11 endpoint2 ethernet12
+  use-service FW_blacklist_service instance 1 sequence 3
+  use-service IPS_demo instance 1 sequence 2
+  use-service firewall_demo instance 1 sequence 1
+
+bigchain chain chain_demo_thru_rest
+
+! bigtap
+bigtap policy FireEye_policy rbac-permission admin-view owner admin
+  action forward
+  filter-interface span_port_eth6
+  priority 100
+  start 1437601020 duration 0
+  1 match any
+bigtap-controller-a
