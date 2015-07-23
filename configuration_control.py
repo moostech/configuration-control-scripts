@@ -27,7 +27,7 @@
 # PRE-REQUISTES:
 #     1) install git on the controller using "sudo apt-get install git" command
 #     2) create a git repository to store the configuration files using the git clone command
-#        "git clone https://github.com/nenni80/BT_SCRIPTS.git"
+#        "git clone https://github.com/nenni80/configuration-control-scripts.git"
 #     3) setup github on your controller
 #        git config --global user.name "nenni80"
 #        git config --global user.email mostafa_mans@hotmail.com
@@ -132,7 +132,7 @@ def github_upload(GITDIR,GITWORKTREE,GITHUBUSER,GITHUBPWD):
     # get current directory
     currentdir = os.getcwd();
     # change the directory to go to github directory, push command doesnt work unless you inside github dir    
-    # git --git-dir=BT_SCRIPTS/.git --work-tree=BT_SCRIPTS push origin master
+    # git --git-dir=configuration-control-scripts/.git --work-tree=configuration-control-scripts push origin master
     os.chdir(r'%s' % (GITWORKTREE))
     output = pexpect.run ('git status')
     if "modified" in output or "Your branch is ahead" in output:
@@ -238,7 +238,7 @@ def main():
                         help="Enter github username to access the github account")
     parser.add_argument("-gp", "--githubpassword", default="", type=str,
                         help="Enter github password to access the github account")
-    parser.add_argument("-gd", "--githubdirectory", default="BT_SCRIPTS", type=str,
+    parser.add_argument("-gd", "--githubdirectory", default="configuration-control-scripts", type=str,
                         help="Enter the path for the .git directory")
 
     parser.add_argument("-e", "--email", default=0, type=int,
@@ -270,14 +270,14 @@ def main():
     cliEmailPWD = args.emailpassword
 
     if cliGithub == 1:
-         if len(cliGITHUBUSER) <=1 or len(cliGITHUBPWD) <= 1:
-             print "ERROR: Please enter Github Username and password"
-             sys.exit(1)
+        if len(cliGITHUBUSER) <=1 or len(cliGITHUBPWD) <= 1:
+            print "ERROR: Please enter Github Username and password"
+            sys.exit(1)
 
     if cliEmail == 1:
-         if len(cliEmailFrom) <=1 or len(cliEmailTo) <= 1 or len(cliEmailPWD) <= 1:
-             print "ERROR: Please enter Email To, FROM, Password"
-             sys.exit(1)
+        if len(cliEmailFrom) <=1 or len(cliEmailTo) <= 1 or len(cliEmailPWD) <= 1:
+            print "ERROR: Please enter Email To, FROM, Password"
+            sys.exit(1)
 
     print ("*********************************************************************\n"
            "****              Config Monitor Script has started              ****\n"
@@ -312,6 +312,10 @@ def main():
                 # call the audit file, to see who did the change
                 if cliLog == 1:
                      output = auditfile()
+                     #check if userlog file exist in the github folder
+                     check_if_file_exists = os.path.isfile('./%s/%s' % (cliGITWORKTREE, USERLOG))
+                     if (not check_if_file_exists):
+                         f = open( './%s/%s' % (cliGITWORKTREE, USERLOG), 'w' )
                      #check file size, then append if file is less than 1,000,000
                      filesize = os.path.getsize('./%s/%s' % (cliGITWORKTREE, USERLOG))
                      if filesize > 1000000:
