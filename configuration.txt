@@ -1,7 +1,7 @@
  show run
 !
 ! Big Tap Controller 5.0.0 (2015.07.11.0615-m.bsc.bigdb)
-! Current Time: 2015-07-23.00:35:19
+! Current Time: 2015-07-23.00:49:37
 !
 version 1.0
 
@@ -197,6 +197,13 @@ bigchain chain chain_demo_thru_rest
 
 ! bigtap
 bigtap policy FireEye_policy rbac-permission admin-view owner admin
+  action forward
+  filter-interface span_port_eth6
+  priority 100
+  start 1437601020 duration 0
+  1 match any
+
+bigtap policy FireEye_policy_copy rbac-permission admin-view owner admin
   action forward
   filter-interface span_port_eth6
   priority 100
